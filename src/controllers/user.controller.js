@@ -5,43 +5,50 @@ import uploadOnCloudinary from "../utils/cloudinary.js";
 import { User } from "../models/user.model.js";
 
 export const registerUser = asyncHandler(async (req, res) => {
-  const { username, name, email, password } = req.body;
-  console.log(req.body);
+ 
+    console.log("Request Body:", req.body);
+    console.log("Content-Type:", req.headers['content-type']);  
+    const { username, name, email, password } = req.body;
+    console.log({
+        username,
+        name,
+        email,
+        password: password ? "exists" : "missing" 
+    });
 
-  if (
-    { username, name, email, password }.some((field) => {
-      field?.trim() === "";
-    })
-  ) {
-    throw new ApiError("All fields are required", 400);
-  }
 
-  if (password.length < 6) {
-    throw new ApiError("Password must be at least 6 characters", 400);
-  }
+    if (typeof password !== 'string' || password.length < 6) {
+        throw new ApiError(400, "Password must be at least 6 characters");
+    }
 
-  const alreadyRegistered = await User.findOne({
-    $or: [{ username }, { email }],
-  });
-  if (alreadyRegistered) {
-    throw new ApiError("User already registered", 405);
-  }
+    const existingUser = await User.findOne({
+        $or: [
+            { username: username.toLowerCase() },
+            { email: email.toLowerCase() }
+        ]
+    });
 
-  const user = await User.create({
-    username: username.toLowerCase(),
-    email,
-    name,
-    password,
-  });
+    if (existingUser) {
+        throw new ApiError(409, "User with email or username already exists");
+    }
 
-  const createdUser = await User.findById(user._id).select(
-    "-password -refreshToken"
-  );
-  if (!createdUser) {
-    throw new ApiError("Something went wrong", 500);
-  }
+    const user = await User.create({
+        username: username.toLowerCase(),
+        email: email.toLowerCase(),
+        name,
+        password
+    });
 
-  return res
-    .status(201)
-    .json(ApiResponse(201, "User registered successfully", createdUser));
+  
+    const createdUser = await User.findById(user._id).select(
+        "-password -refreshToken"
+    );
+
+    if (!createdUser) {
+        throw new ApiError(500, "Something went wrong while registering user");
+    }
+
+    return res
+        .status(201)
+        .json(new ApiResponse(201, "User registered successfully", createdUser));
 });
