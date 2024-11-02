@@ -27,7 +27,6 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
       lowercase: true,
-      trim: true,
     },
     password: {
       type: String,
@@ -36,7 +35,7 @@ const userSchema = new mongoose.Schema(
     },
     blogs: [
       {
-        type: mongoose.Schema.types.ObjectId,
+        type: mongoose.Schema.Types.ObjectId ,
         ref: "Blog",
       },
     ],
