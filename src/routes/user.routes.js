@@ -8,3 +8,5 @@ export default router;
 
 router.route("/register").post(registerUser);
 router.route("/login").post(loginUser);
+
+// protected routes
